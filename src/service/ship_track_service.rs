@@ -34,7 +34,7 @@ impl ShipTrackService{
     }
 
     pub async fn get_latest(&self) -> mongodb::error::Result<Option<ShipTrack>> {
-        let find_options = FindOneOptions::builder().sort(doc! {"last_update": -1}).build();
+        let find_options = FindOneOptions::builder().sort(doc! {"lastUpdate": -1}).build();
         self.collection.find_one(doc! {}).with_options(find_options).await
     }
 }
