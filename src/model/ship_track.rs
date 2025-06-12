@@ -1,10 +1,8 @@
-use chrono::Utc;
+use bson::serde_helpers::serialize_bson_datetime_as_rfc3339_string;
+use mongodb::bson::oid::ObjectId;
+use mongodb::bson::serde_helpers::serialize_object_id_as_hex_string;
 use mongodb::bson::DateTime;
 use serde::{Deserialize, Serialize};
-use mongodb::bson::oid::{ObjectId};
-use mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime;
-use mongodb::bson::serde_helpers::serialize_object_id_as_hex_string;
-use bson::serde_helpers::serialize_bson_datetime_as_rfc3339_string;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShipTrack {
     #[serde(rename = "_id")]
@@ -13,24 +11,22 @@ pub struct ShipTrack {
     pub start_time: DateTime,
    #[serde(rename = "lastUpdate")]
     pub last_update: DateTime,
-    pub track: Track,
     #[serde(rename = "totalPoints")]
     pub total_points: u32,
+    pub coordinates: Vec<[f64; 2]>,
 }
-
+// 新增：用于更新操作的请求体结构体
+#[derive(Debug, Deserialize)]
+pub struct UpdateShipTrackPayload {
+    #[serde(rename = "coordinatesToAdd")]
+    pub coordinates_to_add: Vec<[f64; 2]>,
+}
 // 新增：用于创建操作的请求体结构体
 #[derive(Debug, Deserialize)] // 只需要 Deserialize，因为这是输入载荷
 pub struct ShipTrackRequestDto {
-    pub track: Track, // 客户端提供 track 数据
+    pub coordinates: Vec<[f64; 2]>,
     #[serde(rename = "totalPoints")]
     pub total_points: u32, // 客户端提供 total_points
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Track {
-    #[serde(rename = "type")]
-    pub track_type: String,
-    pub coordinates: Vec<[f64; 2]>,
 }
 
 #[derive(Debug, Serialize)] // Only Serialize is needed for responses
@@ -44,7 +40,7 @@ pub struct ShipTrackResponseDto {
     #[serde(rename = "lastUpdate", serialize_with = "serialize_bson_datetime_as_rfc3339_string")]
     pub last_update: DateTime, // mongodb::bson::DateTime
 
-    pub track: Track, // Track will be serialized as is
+    pub coordinates: Vec<[f64; 2]>,
 
     #[serde(rename = "totalPoints")]
     pub total_points: u32,
@@ -57,7 +53,7 @@ impl From<ShipTrack> for ShipTrackResponseDto {
             id: track_model.id,
             start_time: track_model.start_time,
             last_update: track_model.last_update,
-            track: track_model.track, // Track is Cloneable
+            coordinates: track_model.coordinates,
             total_points: track_model.total_points,
         }
     }

@@ -1,6 +1,6 @@
 use chrono::Utc;
 use axum::{extract::{State, Path}, Json, Router, routing::{get, post, put, delete}};
-use crate::model::ship_track::ShipTrack;
+use crate::model::ship_track::{ShipTrack, UpdateShipTrackPayload};
 use crate::service::ship_track_service::ShipTrackService;
 use std::sync::Arc;
 use crate::model::ship_track::ShipTrackRequestDto;
@@ -13,6 +13,7 @@ pub fn track_routes() -> Router<Arc<ShipTrackService>> {
         .route("/track/{id}", put(update_track))
         .route("/track/{id}", delete(delete_track))
         .route("/track_latest", get(get_latest_track))
+        .route("/append_track/{id}", put(append_track))
 }
 
 async fn create_track(State(service): State<Arc<ShipTrackService>>, Json(track_dto): Json<ShipTrackRequestDto>) -> Json<&'static str> {
@@ -24,7 +25,7 @@ async fn create_track(State(service): State<Arc<ShipTrackService>>, Json(track_d
         id: new_id,
         start_time: current_time.into(),
         last_update: current_time.into(),
-        track: track_dto.track,
+        coordinates: track_dto.coordinates,
         total_points: track_dto.total_points,
     };
     service.create(track).await.unwrap();
@@ -47,4 +48,21 @@ async fn delete_track (State(service): State<Arc<ShipTrackService>>, Path(id): P
 async fn get_latest_track (State(service): State<Arc<ShipTrackService>>) -> Json<Option<ShipTrackResponseDto>> {
     let res = service.get_latest().await.unwrap();
     Json(res.map(ShipTrackResponseDto::from))
+}
+
+async fn append_track(
+    State(service): State<Arc<ShipTrackService>>,
+    Path(id): Path<String>, // 从路径获取 ID
+    Json(payload): Json<UpdateShipTrackPayload> // 使用新的 Payload
+) -> Json<Option<ShipTrackResponseDto>> { // 返回更新后的轨迹或 None
+    match service.append_coordinates_and_update(&id, payload.coordinates_to_add).await {
+        Ok(Some(updated_track_model)) => Json(Some(ShipTrackResponseDto::from(updated_track_model))),
+        Ok(None) => Json(None), // 文档未找到或未修改 (但 ReturnDocument::After 应该会返回)
+        Err(_e) => {
+            // 在实际应用中应记录错误 _e
+            // 并返回更合适的 HTTP 错误状态码
+            eprintln!("Error updating track: {:?}", _e); // 简单打印错误
+            Json(None) // 简化错误处理
+        }
+    }
 }
