@@ -20,7 +20,7 @@ use crate::service::ship_track_service::ShipTrackService;
 async fn main() {
     // 初始化日志记录器
     tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
+        .with_max_level(Level::DEBUG)
         .init();
 
     let client_options = ClientOptions::parse("mongodb://localhost:27017").await.unwrap();
@@ -37,7 +37,24 @@ async fn main() {
         .route("/", get(|| async { "Hello World!" }))
         .merge(track_routes().with_state(ship_track_service))
         .merge(report_routes().with_state(report_raw_service))
-        .layer(TraceLayer::new_for_http());
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(|request: &axum::extract::Request| {
+                    tracing::Span::none()
+                    // tracing::info_span!(
+                    //     "http_request",
+                    //     method = %request.method(),
+                    //     uri = %request.uri(),
+                    //     version = ?request.version(),
+                    // )
+                })
+                .on_request(|request: &axum::extract::Request, _span: &tracing::Span| {
+                    info!("处理请求开始, Method: {:?}, Uri: {:?}, Headers: {:?}", request.method(), request.uri(), request.headers());
+                })
+                .on_response(|response: &axum::response::Response, latency: std::time::Duration, _span: &tracing::Span| {
+                    info!("请求处理完成，耗时: {:?}, Status: {:?}", latency, response.status());
+                })
+        );
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
     let addr = listener.local_addr().unwrap();
     info!("The service is listening http://{}", addr);

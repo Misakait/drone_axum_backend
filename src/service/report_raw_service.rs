@@ -2,7 +2,7 @@ use bson::doc;
 use futures::StreamExt;
 use mongodb::Collection;
 use mongodb::options::FindOneOptions;
-use crate::model::report_raw::{ReportRaw, ReportRawRequestDto};
+use crate::model::report_raw::{ReportRaw, ReportRawRequestDto, ReportRawResponseDto};
 
 pub struct ReportRawService{
     pub collection: Collection<ReportRaw>,
