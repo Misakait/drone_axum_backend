@@ -1,4 +1,4 @@
-use bson::doc;
+use bson::{doc, DateTime};
 use futures::StreamExt;
 use mongodb::Collection;
 use mongodb::options::FindOneOptions;
@@ -10,6 +10,7 @@ use uuid::Uuid;
 use std::path::Path;
 use tracing::info;
 use axum::extract::multipart::Field;
+use bson::oid::ObjectId;
 
 pub struct ReportRawService{
     pub collection: Collection<ReportRaw>,
@@ -52,11 +53,16 @@ impl ReportRawService {
         image_files: Vec<(String, String, bytes::Bytes)>, // (filename, content_type, data)
     ) -> Result<serde_json::Value, AppError> {
         let mut image_paths = Vec::new();
-        let upload_dir = "/var/uploads/images";
+        let mut relative_paths = Vec::new(); // 用于存储相对路径
+        let base_upload_dir = "/var/uploads/images";
+        
+        // 生成日期文件夹名称 (YYYYMMDD)
+        let date_folder = chrono::Utc::now().format("%Y%m%d").to_string();
+        let upload_dir = format!("{}/{}", base_upload_dir, date_folder);
 
         // 确保上传目录存在
-        if !Path::new(upload_dir).exists() {
-            fs::create_dir_all(upload_dir).await.map_err(|e| {
+        if !Path::new(&upload_dir).exists() {
+            fs::create_dir_all(&upload_dir).await.map_err(|e| {
                 AppError::InternalServerError(format!("Failed to create upload directory: {}", e))
             })?;
         }
@@ -70,8 +76,9 @@ impl ReportRawService {
 
             // 生成唯一文件名
             let extension = file_name.split('.').last().unwrap_or("jpg");
-            let unique_filename = format!("{}_{}.{}", Uuid::new_v4(), chrono::Utc::now().timestamp(), extension);
+            let unique_filename = format!("{}.{}", Uuid::new_v4(), extension);
             let file_path = format!("{}/{}", upload_dir, unique_filename);
+            let relative_path = format!("/{}/{}", date_folder, unique_filename);
 
             // 保存文件
             let mut file = fs::File::create(&file_path).await.map_err(|e| {
@@ -84,18 +91,27 @@ impl ReportRawService {
 
             info!("图片文件已保存: {}", file_path);
             image_paths.push(file_path);
+            relative_paths.push(relative_path);
         }
 
         // 保存报告到数据库
-        self.insert_one(report_data).await.map_err(|e| {
+        let report_raw = ReportRaw{
+            id: ObjectId::new(),
+            created_at: DateTime::now(),
+            photo_path: relative_paths.join(", "), // 使用相对路径
+            detail: report_data.detail,
+            title: report_data.title,
+        };
+        self.collection.insert_one(report_raw).await.map_err(|e| {
             AppError::InternalServerError(format!("Failed to save report: {}", e))
         })?;
-
+        
         // 返回成功响应
         Ok(serde_json::json!({
             "status": "success",
             "message": "Report created successfully",
             "uploaded_images": image_paths,
+            "relative_paths": relative_paths,
             "image_count": image_paths.len()
         }))
     }
