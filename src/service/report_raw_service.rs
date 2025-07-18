@@ -28,7 +28,7 @@ impl ReportRawService {
     }
 
     pub async fn get_latest(&self) -> mongodb::error::Result<Option<ReportRaw>> {
-        let find_options = FindOneOptions::builder().sort(doc! {"lastUpdate": -1}).build();
+        let find_options = FindOneOptions::builder().sort(doc! {"createdAt": -1}).build();
         self.collection.find_one(doc! {}).with_options(find_options).await
     }
     pub async fn get_by_id(&self, id: &str) -> mongodb::error::Result<Option<ReportRaw>> {
