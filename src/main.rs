@@ -55,7 +55,7 @@ async fn main() {
                     info!("请求处理完成，耗时: {:?}, Status: {:?}", latency, response.status());
                 })
         );
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:717").await.unwrap();
     let addr = listener.local_addr().unwrap();
     info!("The service is listening http://{}", addr);
     axum::serve(listener, app).await.unwrap();

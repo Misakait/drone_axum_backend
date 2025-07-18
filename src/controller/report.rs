@@ -9,10 +9,15 @@ use std::sync::Arc;
 
 pub fn report_routes() -> Router<Arc<ReportRawService>> {
     Router::new()
-        .route("/report_raw", post(create_report_raw))
+        .route("/report_raw", post(create_report_raw).get(get_report_raw_all))
         .route("/report_latest", get(get_latest_report_raw))
         .route("/report_with_image", post(create_report_with_image))
-        .layer(DefaultBodyLimit::max(1024*1024*10)) // 10MB limit
+        .layer(DefaultBodyLimit::max(1024*1024*10*5)) // 50MB limit
+}
+async fn get_report_raw_all(State(service): State<Arc<ReportRawService>>) -> Result<Json<Vec<ReportRawResponseDto>>, AppError> {
+    let reports = service.get_all().await?;
+    let response: Vec<ReportRawResponseDto> = reports.into_iter().map(ReportRawResponseDto::from).collect();
+    Ok(Json(response))
 }
 
 async fn get_latest_report_raw(State(service): State<Arc<ReportRawService>>) -> Result<Json<Option<ReportRawResponseDto>>, AppError> {
