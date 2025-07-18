@@ -12,9 +12,9 @@ pub struct ReportRaw {
     pub created_at: DateTime,
     #[serde(rename = "photoPath")]
     pub photo_path: String,
-    
+
     pub detail: String,
-    
+
     pub title: String
 }
 impl From<ReportRawRequestDto> for ReportRaw {
@@ -22,7 +22,7 @@ impl From<ReportRawRequestDto> for ReportRaw {
         ReportRaw {
             id: ObjectId::new(),
             created_at: DateTime::now(),
-            photo_path: dto.photo_path,
+            photo_path: String::new(),
             detail: dto.detail,
             title: dto.title,
         }
@@ -30,8 +30,8 @@ impl From<ReportRawRequestDto> for ReportRaw {
 }
 #[derive(Debug, Deserialize,Serialize)]
 pub struct ReportRawRequestDto {
-    #[serde(rename = "photoPath")]
-    pub photo_path: String,
+    // #[serde(rename = "photoPath")]
+    // pub photo_path: String,
     pub detail: String,
     pub title: String,
 }
@@ -43,9 +43,9 @@ pub struct ReportRawResponseDto {
     pub created_at: DateTime,
     #[serde(rename = "photoPath")]
     pub photo_path: String,
-    
+
     pub detail: String,
-    
+
     pub title: String
 }
 impl From<ReportRaw> for ReportRawResponseDto {

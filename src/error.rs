@@ -9,8 +9,11 @@ use serde_json::json;
 #[derive(Debug)]
 pub enum AppError {
     Mongo(mongodb::error::Error),
+    BadRequest(String),
+    InternalServerError(String),
     // 在此添加其他错误变体
 }
+
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
@@ -19,6 +22,8 @@ impl IntoResponse for AppError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("数据库错误: {}", err),
             ),
+            AppError::BadRequest(err) => (StatusCode::BAD_REQUEST, err.to_string()),
+            AppError::InternalServerError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
         };
 
         let body = Json(json!({

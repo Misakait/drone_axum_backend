@@ -3,6 +3,13 @@ use futures::StreamExt;
 use mongodb::Collection;
 use mongodb::options::FindOneOptions;
 use crate::model::report_raw::{ReportRaw, ReportRawRequestDto, ReportRawResponseDto};
+use crate::error::AppError;
+use tokio::fs;
+use tokio::io::AsyncWriteExt;
+use uuid::Uuid;
+use std::path::Path;
+use tracing::info;
+use axum::extract::multipart::Field;
 
 pub struct ReportRawService{
     pub collection: Collection<ReportRaw>,
@@ -37,5 +44,59 @@ impl ReportRawService {
             }
         }
         Ok(results)
+    }
+
+    pub async fn create_report_with_images(
+        &self,
+        report_data: ReportRawRequestDto,
+        image_files: Vec<(String, String, bytes::Bytes)>, // (filename, content_type, data)
+    ) -> Result<serde_json::Value, AppError> {
+        let mut image_paths = Vec::new();
+        let upload_dir = "/var/uploads/images";
+
+        // 确保上传目录存在
+        if !Path::new(upload_dir).exists() {
+            fs::create_dir_all(upload_dir).await.map_err(|e| {
+                AppError::InternalServerError(format!("Failed to create upload directory: {}", e))
+            })?;
+        }
+
+        // 处理图片文件上传
+        for (file_name, content_type, data) in image_files {
+            // 验证是否为图片文件
+            if !content_type.starts_with("image/") {
+                return Err(AppError::BadRequest("Only image files are allowed".to_string()));
+            }
+
+            // 生成唯一文件名
+            let extension = file_name.split('.').last().unwrap_or("jpg");
+            let unique_filename = format!("{}_{}.{}", Uuid::new_v4(), chrono::Utc::now().timestamp(), extension);
+            let file_path = format!("{}/{}", upload_dir, unique_filename);
+
+            // 保存文件
+            let mut file = fs::File::create(&file_path).await.map_err(|e| {
+                AppError::InternalServerError(format!("Failed to create file: {}", e))
+            })?;
+
+            file.write_all(&data).await.map_err(|e| {
+                AppError::InternalServerError(format!("Failed to write file: {}", e))
+            })?;
+
+            info!("图片文件已保存: {}", file_path);
+            image_paths.push(file_path);
+        }
+
+        // 保存报告到数据库
+        self.insert_one(report_data).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to save report: {}", e))
+        })?;
+
+        // 返回成功响应
+        Ok(serde_json::json!({
+            "status": "success",
+            "message": "Report created successfully",
+            "uploaded_images": image_paths,
+            "image_count": image_paths.len()
+        }))
     }
 }
