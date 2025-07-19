@@ -115,4 +115,11 @@ impl ReportRawService {
             "image_count": image_paths.len()
         }))
     }
+
+    pub async fn delete_all(&self) -> Result<u64, AppError> {
+        let result = self.collection.delete_many(doc!{}).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to delete all reports: {}", e))
+        })?;
+        Ok(result.deleted_count)
+    }
 }

@@ -2,7 +2,7 @@ use crate::error::AppError;
 use crate::model::report_raw::{ReportRawRequestDto, ReportRawResponseDto};
 use crate::service::report_raw_service::ReportRawService;
 use axum::extract::{State, Multipart, DefaultBodyLimit};
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use std::sync::Arc;
 
@@ -12,6 +12,7 @@ pub fn report_routes() -> Router<Arc<ReportRawService>> {
         .route("/report_raw", post(create_report_raw).get(get_report_raw_all))
         .route("/report_latest", get(get_latest_report_raw))
         .route("/report_with_image", post(create_report_with_image))
+        .route("/report_raw/delete_all", delete(delete_all_report_raw))
         .layer(DefaultBodyLimit::max(1024*1024*10*5)) // 50MB limit
 }
 async fn get_report_raw_all(State(service): State<Arc<ReportRawService>>) -> Result<Json<Vec<ReportRawResponseDto>>, AppError> {
@@ -81,4 +82,12 @@ async fn create_report_with_image(
     let result = service.create_report_with_images(report, image_files).await?;
     
     Ok(Json(result))
+}
+
+async fn delete_all_report_raw(State(service): State<Arc<ReportRawService>>) -> Result<Json<serde_json::Value>, AppError> {
+    let deleted_count = service.delete_all().await?;
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "deleted_count": deleted_count
+    })))
 }
