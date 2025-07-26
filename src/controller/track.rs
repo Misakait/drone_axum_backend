@@ -16,7 +16,7 @@ pub fn track_routes() -> Router<Arc<ShipTrackService>> {
         .route("/append_track/{id}", put(append_track))
 }
 
-async fn create_track(State(service): State<Arc<ShipTrackService>>, Json(track_dto): Json<ShipTrackRequestDto>) -> Json<&'static str> {
+async fn create_track(State(service): State<Arc<ShipTrackService>>, Json(track_dto): Json<ShipTrackRequestDto>) -> Json<String> {
     let new_id = ObjectId::new(); // 服务器生成 _id
     let current_time = Utc::now(); // 服务器生成时间戳
 
@@ -29,7 +29,7 @@ async fn create_track(State(service): State<Arc<ShipTrackService>>, Json(track_d
         total_points: track_dto.total_points,
     };
     service.create(track).await.unwrap();
-    Json("ok")
+    Json(new_id.to_hex())
 }
 
 async fn get_track(State(service): State<Arc<ShipTrackService>>, Path(id): Path<String>) -> Json<Option<ShipTrackResponseDto>> {

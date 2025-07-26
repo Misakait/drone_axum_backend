@@ -101,6 +101,9 @@ impl ReportRawService {
             photo_path: relative_paths.join(", "), // 使用相对路径
             detail: report_data.detail,
             title: report_data.title,
+            damage: report_data.damage,
+            rust: report_data.rust,
+            covering: report_data.covering,
         };
         self.collection.insert_one(report_raw).await.map_err(|e| {
             AppError::InternalServerError(format!("Failed to save report: {}", e))

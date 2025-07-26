@@ -12,6 +12,7 @@ use mongodb::options::ClientOptions;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use tracing::{info, Level};
+use crate::controller::flight::flight_routes;
 use crate::controller::report::report_routes;
 use crate::controller::track::track_routes;
 use crate::service::ship_track_service::ShipTrackService;
@@ -32,11 +33,16 @@ async fn main() {
     // Initialize the ReportRawService with the MongoDB collection
     let report_collection = db.collection::<model::report_raw::ReportRaw>("reportRaw");
     let report_raw_service = Arc::new(service::report_raw_service::ReportRawService::new(report_collection));
+    // Initialize the FlightService with the MongoDB collection
+    let flight_collection = db.collection::<model::flight::Flight>("flights");
+    let flight_service = Arc::new(service::flight_service::FlightService::new(flight_collection));
+    
     // Create the Axum application with the routes and services
     let app = Router::new()
         .route("/", get(|| async { "Hello World!" }))
         .merge(track_routes().with_state(ship_track_service))
         .merge(report_routes().with_state(report_raw_service))
+        .merge(flight_routes().with_state(flight_service))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|request: &axum::extract::Request| {

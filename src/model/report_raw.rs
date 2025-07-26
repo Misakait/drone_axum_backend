@@ -15,7 +15,10 @@ pub struct ReportRaw {
 
     pub detail: String,
 
-    pub title: String
+    pub title: String,
+    pub damage: f64,
+    pub rust: f64,
+    pub covering: f64,
 }
 impl From<ReportRawRequestDto> for ReportRaw {
     fn from(dto: ReportRawRequestDto) -> Self {
@@ -25,6 +28,9 @@ impl From<ReportRawRequestDto> for ReportRaw {
             photo_path: String::new(),
             detail: dto.detail,
             title: dto.title,
+            damage: dto.damage,
+            rust: dto.rust,
+            covering: dto.covering,
         }
     }
 }
@@ -34,6 +40,9 @@ pub struct ReportRawRequestDto {
     // pub photo_path: String,
     pub detail: String,
     pub title: String,
+    pub damage: f64,
+    pub rust: f64,
+    pub covering: f64,
 }
 #[derive(Debug, Deserialize,Serialize)]
 pub struct ReportRawResponseDto {
@@ -46,7 +55,10 @@ pub struct ReportRawResponseDto {
 
     pub detail: String,
 
-    pub title: String
+    pub title: String,
+    pub damage: f64,
+    pub rust: f64,
+    pub covering: f64,
 }
 impl From<ReportRaw> for ReportRawResponseDto {
     fn from(report_raw: ReportRaw) -> Self {
@@ -56,6 +68,9 @@ impl From<ReportRaw> for ReportRawResponseDto {
             photo_path: report_raw.photo_path,
             detail: report_raw.detail,
             title: report_raw.title,
+            damage: report_raw.damage,
+            rust: report_raw.rust,
+            covering: report_raw.covering,
         }
     }
 }
