@@ -30,6 +30,7 @@ async fn create_empty_flight(
         cabin_temperature: vec![],
         aircraft_altitude: vec![],
         distance_to_fan: vec![],
+        air_pressure: vec![],
     };
     service.create(flight).await?;
     Ok(Json(new_id.to_hex()))

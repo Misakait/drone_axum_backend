@@ -19,6 +19,8 @@ pub struct ReportRaw {
     pub damage: f64,
     pub rust: f64,
     pub covering: f64,
+    #[serde(rename = "aiReport")]
+    pub ai_report: Option<String>,
 }
 impl From<ReportRawRequestDto> for ReportRaw {
     fn from(dto: ReportRawRequestDto) -> Self {
@@ -31,10 +33,11 @@ impl From<ReportRawRequestDto> for ReportRaw {
             damage: dto.damage,
             rust: dto.rust,
             covering: dto.covering,
+            ai_report: None,
         }
     }
 }
-#[derive(Debug, Deserialize,Serialize)]
+#[derive(Debug, Deserialize,Serialize,Clone)]
 pub struct ReportRawRequestDto {
     // #[serde(rename = "photoPath")]
     // pub photo_path: String,
@@ -59,6 +62,7 @@ pub struct ReportRawResponseDto {
     pub damage: f64,
     pub rust: f64,
     pub covering: f64,
+    pub ai_report: Option<String>,
 }
 impl From<ReportRaw> for ReportRawResponseDto {
     fn from(report_raw: ReportRaw) -> Self {
@@ -71,6 +75,7 @@ impl From<ReportRaw> for ReportRawResponseDto {
             damage: report_raw.damage,
             rust: report_raw.rust,
             covering: report_raw.covering,
+            ai_report: report_raw.ai_report,
         }
     }
 }

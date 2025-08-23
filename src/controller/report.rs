@@ -79,8 +79,15 @@ async fn create_report_with_image(
     })?;
 
     // 委托给 service 层处理业务逻辑
-    let result = service.create_report_with_images(report, image_files).await?;
-    
+    let (result, report_id) = service.create_report_with_images(report.clone(), image_files).await?;
+    tokio::spawn(async move {
+        service.clone().generate_ai_report_background(
+            report_id.clone(),
+            report.rust,
+            report.covering,
+            report.damage,
+        ).await;
+    });
     Ok(Json(result))
 }
 
