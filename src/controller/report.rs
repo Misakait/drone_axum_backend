@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 pub fn report_routes() -> Router<Arc<ReportRawService>> {
     Router::new()
-        .route("/report_raw", post(create_report_raw).get(get_report_raw_all))
+        .route("/report_raw", post(create_report_raw).get(get_report_raw_all).delete(delete_report_by_id))
         .route("/report_latest", get(get_latest_report_raw))
         .route("/report_with_image", post(create_report_with_image))
         .route("/report_raw/delete_all", delete(delete_all_report_raw))
@@ -20,7 +20,12 @@ async fn get_report_raw_all(State(service): State<Arc<ReportRawService>>) -> Res
     let response: Vec<ReportRawResponseDto> = reports.into_iter().map(ReportRawResponseDto::from).collect();
     Ok(Json(response))
 }
-
+async fn delete_report_by_id(
+    State(service): State<Arc<ReportRawService>>,
+    Json(id): Json<String>
+) -> Result<(), AppError> {
+    service.delete_by_id(&id).await
+}
 async fn get_latest_report_raw(State(service): State<Arc<ReportRawService>>) -> Result<Json<Option<ReportRawResponseDto>>, AppError> {
     let res = service.get_latest().await?;
     match res {

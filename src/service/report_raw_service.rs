@@ -47,6 +47,15 @@ impl ReportRawService {
         }
         Ok(results)
     }
+    pub async fn delete_by_id(&self, id: &str) -> Result<(),AppError> {
+        let obj_id = ObjectId::parse_str(id).map_err(|e| {
+            AppError::BadRequest(format!("Invalid ObjectId: {}", e))
+        })?;
+        self.collection.delete_one(doc! {"_id": obj_id}).await.map_err(|e| {
+            AppError::InternalServerError(format!("Failed to delete report: {}", e))
+        })?;
+        Ok(())
+    }
 
     pub async fn create_report_with_images(
         &self,
