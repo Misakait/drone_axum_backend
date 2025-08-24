@@ -148,7 +148,7 @@ impl ReportRawService {
         let mut messages = vec![];
         messages.push(Message {
             role: "system".to_string(),
-            content: "你是一个报告智能报告生成体,用户会发送风机叶片检测之后的三个参数,分别为锈蚀情况,覆盖情况,损坏情况,这三个参数均在0到1之间代表百分数,你需要为其生成一份简短的报告,切记不要使用markdown格式".to_string()
+            content: "你是一个报告智能报告生成体,用户会发送风机叶片检测之后的三个参数,分别为锈蚀情况,覆盖情况,损坏情况,这三个参数均在0到1之间代表百分数,你需要为其生成一份简短的报告以及维修建议,切记不要使用markdown格式".to_string()
         });
         messages.push(Message {
             role: "user".to_string(),
